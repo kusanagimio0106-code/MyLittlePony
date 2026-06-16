@@ -48,10 +48,9 @@
             overflow: hidden;
             border: 2px solid #ffccd5;
         }
-        .pony-card img {
-            width: 85%;
-            height: 85%;
-            object-fit: contain;
+        .pony-card svg {
+            width: 80%;
+            height: 80%;
         }
         @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
         #win-message {
@@ -83,14 +82,32 @@
     </div>
 
     <script>
-        // Danh sách hình ảnh chuẩn 6 nhân vật chính trong My Little Pony từ trang dữ liệu uy tín
+        // Dữ liệu SVG Vector vẽ biểu tượng bờm và màu sắc đặc trưng của 6 chú ngựa Pony
         const PONIES = [
-            { id: 'twilight', img: 'https://images.wikia.com/mlp/images/b/bc/Twilight_Sparkle_id.png' },
-            { id: 'pinkie', img: 'https://images.wikia.com/mlp/images/b/b2/Pinkie_Pie_id.png' },
-            { id: 'rainbow', img: 'https://images.wikia.com/mlp/images/e/e5/Rainbow_Dash_id.png' },
-            { id: 'fluttershy', img: 'https://images.wikia.com/mlp/images/d/d6/Fluttershy_id.png' },
-            { id: 'rarity', img: 'https://images.wikia.com/mlp/images/d/d1/Rarity_id.png' },
-            { id: 'applejack', img: 'https://images.wikia.com/mlp/images/d/d8/Applejack_id.png' }
+            { 
+                id: 'twilight', 
+                svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#D19FEF"/><path d="M20,30 Q50,5 80,30 Q65,65 50,85 Q35,65 20,30" fill="#283593"/><path d="M35,20 Q50,5 65,20 Q55,50 50,75" fill="#E91E63"/><polygon points="50,15 53,25 62,25 55,31 57,40 50,35 43,40 45,31 38,25 47,25" fill="#FFFFFF"/></svg>`
+            },
+            { 
+                id: 'pinkie', 
+                svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#FFB7D5"/><path d="M20,40 Q50,-10 80,40 Q95,70 50,90 Q5,70 20,40" fill="#FF4081"/><circle cx="40" cy="35" r="8" fill="#FF4081"/><circle cx="60" cy="45" r="10" fill="#FF4081"/><circle cx="35" cy="60" r="7" fill="#FF4081"/></svg>`
+            },
+            { 
+                id: 'rainbow', 
+                svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#B3E5FC"/><path d="M15,40 Q50,0 85,40 L75,80 L25,80 Z" fill="#FF1744"/><path d="M25,45 Q50,15 75,45 L70,80 L30,80 Z" fill="#FFFF00"/><path d="M35,50 Q50,30 65,50 L60,80 L40,80 Z" fill="#00E676"/><path d="M45,55 Q50,45 55,55 L53,80 L47,80 Z" fill="#2979FF"/><polygon points="30,55 45,55 35,70 50,70 40,90 60,65 48,65" fill="#FFFFFF"/></svg>`
+            },
+            { 
+                id: 'fluttershy', 
+                svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#FFF59D"/><path d="M15,30 Q50,5 85,40 Q70,95 30,85" fill="#F48FB1"/><path d="M40,50 Q60,35 70,55" fill="none" stroke="#F48FB1" stroke-width="5" stroke-linecap="round"/><circle cx="35" cy="45" r="5" fill="#64B5F6"/></svg>`
+            },
+            { 
+                id: 'rarity', 
+                svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#F5F5F5"/><path d="M30,25 Q60,5 80,35 Q60,75 40,55" fill="#4A148C"/><path d="M45,45 Q65,35 55,65" fill="none" stroke="#4A148C" stroke-width="4"/><polygon points="50,10 55,25 45,25" fill="#D19FEF" stroke="#4A148C" stroke-width="2"/></svg>`
+            },
+            { 
+                id: 'applejack', 
+                svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#FFB74D"/><path d="M10,40 Q50,20 90,40 L80,50 L20,50 Z" fill="#F57C00"/><path d="M25,40 L25,15 Q50,5 75,15 L75,40 Z" fill="#A1887F"/><circle cx="35" cy="70" r="7" fill="#D50000"/><circle cx="65" cy="70" r="7" fill="#D50000"/><circle cx="50" cy="82" r="7" fill="#D50000"/></svg>`
+            }
         ];
 
         const COL_CAPACITY = 4;
@@ -101,17 +118,14 @@
             document.getElementById('win-message').style.display = 'none';
             selectedColIndex = null;
             
-            // Chọn ngẫu nhiên 4 nhân vật Pony để chơi mỗi lượt (giúp game vừa sức với bé)
             let activePonies = [...PONIES].sort(() => Math.random() - 0.5).slice(0, 4);
             let pool = [];
             activePonies.forEach(p => {
                 for(let i=0; i<COL_CAPACITY; i++) pool.push({ ...p });
             });
             
-            // Xáo trộn vị trí các Pony
             pool.sort(() => Math.random() - 0.5);
 
-            // Tạo 4 cột chứa Pony và 2 cột trống để di chuyển (Tổng cộng 6 cột)
             columnsData = [];
             for (let i = 0; i < 4; i++) {
                 columnsData.push(pool.slice(i * COL_CAPACITY, (i + 1) * COL_CAPACITY));
@@ -134,12 +148,7 @@
                 col.forEach(pony => {
                     const ponyDiv = document.createElement('div');
                     ponyDiv.className = 'pony-card';
-                    
-                    const img = document.createElement('img');
-                    img.src = pony.img;
-                    img.alt = pony.id;
-                    
-                    ponyDiv.appendChild(img);
+                    ponyDiv.innerHTML = pony.svg; // Đưa trực tiếp SVG vào
                     colDiv.appendChild(ponyDiv);
                 });
 
@@ -170,7 +179,6 @@
 
             let topPony = fromCol[fromCol.length - 1];
             
-            // Luật xếp: Cột phải trống HOẶC Pony trên cùng phải trùng hình với Pony định thả vào
             if (toCol.length === 0 || toCol[toCol.length - 1].id === topPony.id) {
                 toCol.push(fromCol.pop());
             }
