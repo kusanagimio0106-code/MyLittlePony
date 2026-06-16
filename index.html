@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pony Sorting Game</title>
+    <title>Xếp chỗ Pony</title>
     <link rel="manifest" href="manifest.json">
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -16,31 +16,33 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            justify-content: center; /* Căn giữa màn hình theo chiều dọc */
+            justify-content: center;
         }
-        h1 { color: #ff4d94; text-shadow: 2px 2px white; margin-bottom: 5px; font-size: 24px; text-align: center; font-weight: bold; }
+        .header-container { text-align: center; margin-bottom: 5px; }
+        h1 { color: #ff4d94; text-shadow: 2px 2px white; margin: 0; font-size: 24px; font-weight: bold; }
+        .level-badge {
+            background: #ff4d94; color: white; padding: 5px 15px;
+            border-radius: 15px; font-size: 16px; font-weight: bold;
+            display: inline-block; margin-top: 5px; box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
         
-        /* ĐƯA CÁC CỘT VÀO CÙNG MỘT HÀNG NGANG */
         #game-container { 
             display: flex; 
             gap: 10px; 
-            justify-content: flex-start; /* Sắp xếp từ trái qua phải */
-            flex-wrap: nowrap; /* Tuyệt đối không cho xuống hàng */
-            margin-top: 25px; 
+            justify-content: flex-start;
+            flex-wrap: nowrap;
+            margin-top: 20px; 
             max-width: 100%;
-            overflow-x: auto; /* Nếu màn hình nhỏ sẽ tự động cho vuốt ngang mượt mà */
-            padding: 20px 15px; /* Thêm padding để không bị che mất nơ */
-            scrollbar-width: none; /* Ẩn thanh cuộn trên Firefox */
+            overflow-x: auto;
+            padding: 20px 15px;
+            scrollbar-width: none;
         }
-        
-        #game-container::-webkit-scrollbar {
-            display: none; /* Ẩn thanh cuộn trên Chrome, Safari */
-        }
+        #game-container::-webkit-scrollbar { display: none; }
         
         /* KHUNG LỌ THỦY TINH */
         .column {
             position: relative;
-            width: 70px; /* Thu nhỏ một chút để vừa vặn hàng ngang tốt hơn */
+            width: 70px;
             height: 270px;
             background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.85));
             border: 4px solid #ffb3d9;
@@ -52,7 +54,7 @@
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-shadow: inset 0 0 15px rgba(255,255,255,0.6), 0 6px 12px rgba(255, 77, 148, 0.15);
-            flex-shrink: 0; /* Không cho hũ bị bóp méo chiều rộng */
+            flex-shrink: 0;
         }
         
         .column::before {
@@ -110,15 +112,12 @@
             z-index: 1;
             transition: transform 0.2s ease;
         }
-        .pony-card svg {
-            width: 82%;
-            height: 82%;
-        }
+        .pony-card svg { width: 82%; height: 82%; }
         
         @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
         
-        /* BẢNG CHIẾN THẮNG */
-        #win-message {
+        /* BẢNG CHIẾN THẮNG & HOÀN THÀNH GAME */
+        .modal {
             display: none;
             position: fixed;
             top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -127,7 +126,7 @@
             width: 85%; max-width: 350px;
             border: 4px solid #ffccd5;
         }
-        #win-message h2 { color: #ff4d94; margin-top: 0; font-size: 26px; }
+        .modal h2 { color: #ff4d94; margin-top: 0; font-size: 26px; }
         
         button {
             background: linear-gradient(135deg, #ff66b2, #ff3399); 
@@ -137,21 +136,37 @@
             transition: all 0.1s;
         }
         button:active { box-shadow: 0 2px #b30059; transform: translateY(3px); }
+        
+        .reset-btn {
+            background: #999; box-shadow: 0 3px #666; font-size: 12px; padding: 5px 10px; border-radius: 10px; margin-top: 20px;
+        }
+        .reset-btn:active { box-shadow: 0 1px #666; }
     </style>
 </head>
 <body>
 
-    <h1>🦄 Pony Sắp Xếp Đáng Yêu 🦄</h1>
+    <div class="header-container">
+        <h1>🦄 Sắp xếp cho những Pony Đáng Yêu 🦄</h1>
+        <div class="level-badge" id="level-display">Màn 1</div>
+    </div>
+    
     <div id="game-container"></div>
 
-    <div id="win-message">
-        <h2>🎉 Bé giỏi quá! 🎉</h2>
-        <p>Các bạn My Little Pony đã về đúng chiếc lọ kẹo rồi!</p>
-        <button onclick="initGame()">Chơi tiếp nha</button>
+    <div id="win-message" class="modal">
+        <h2>🎉 Xuất sắc quá! 🎉</h2>
+        <p id="win-text">Bé đã hoàn thành màn chơi này rồi!</p>
+        <button onclick="nextLevel()">Chơi Màn Tiếp Theo</button>
+    </div>
+
+    <div id="victory-message" class="modal">
+        <h2>👑 Công Chúa Pony! 👑</h2>
+        <p>Bé quá thông minh! Bé đã chiến thắng toàn bộ 10 màn chơi!</p>
+        <button onclick="resetGame()">Chơi lại từ đầu</button>
     </div>
 
     <script>
-        const PONIES = [
+        // Kho 6 nhân vật My Little Pony vẽ bằng SVG
+        const PONIES_POOL = [
             { id: 'twilight', svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#D19FEF"/><path d="M20,30 Q50,5 80,30 Q65,65 50,85 Q35,65 20,30" fill="#283593"/><path d="M35,20 Q50,5 65,20 Q55,50 50,75" fill="#E91E63"/><polygon points="50,15 53,25 62,25 55,31 57,40 50,35 43,40 45,31 38,25 47,25" fill="#FFFFFF"/></svg>` },
             { id: 'pinkie', svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#FFB7D5"/><path d="M20,40 Q50,-10 80,40 Q95,70 50,90 Q5,70 20,40" fill="#FF4081"/><circle cx="40" cy="35" r="8" fill="#FF4081"/><circle cx="60" cy="45" r="10" fill="#FF4081"/><circle cx="35" cy="60" r="7" fill="#FF4081"/></svg>` },
             { id: 'rainbow', svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#B3E5FC"/><path d="M15,40 Q50,0 85,40 L75,80 L25,80 Z" fill="#FF1744"/><path d="M25,45 Q50,15 75,45 L70,80 L30,80 Z" fill="#FFFF00"/><path d="M35,50 Q50,30 65,50 L60,80 L40,80 Z" fill="#00E676"/><path d="M45,55 Q50,45 55,55 L53,80 L47,80 Z" fill="#2979FF"/><polygon points="30,55 45,55 35,70 50,70 40,90 60,65 48,65" fill="#FFFFFF"/></svg>` },
@@ -161,27 +176,45 @@
         ];
 
         const COL_CAPACITY = 4;
+        let currentLevel = 1;
         let selectedColIndex = null;
         let columnsData = [];
 
+        // Đọc dữ liệu màn chơi cũ đã lưu (nếu có)
+        if (localStorage.getItem('pony_game_level')) {
+            currentLevel = parseInt(localStorage.getItem('pony_game_level'));
+        }
+
         function initGame() {
             document.getElementById('win-message').style.display = 'none';
+            document.getElementById('victory-message').style.display = 'none';
+            document.getElementById('level-display').innerText = `Màn ${currentLevel}`;
             selectedColIndex = null;
             
-            let activePonies = [...PONIES].sort(() => Math.random() - 0.5).slice(0, 4);
+            // LOGIC TĂNG ĐỘ KHÓ THEO MÀN:
+            // Màn 1: 2 nhân vật đầy + 1 trống. Màn càng cao càng cộng thêm lọ.
+            let fullColsCount = Math.min(2 + (currentLevel - 1), 6); 
+            let emptyColsCount = Math.min(1 + (currentLevel - 1), 4); 
+
+            // Lấy ngẫu nhiên các nhân vật tương ứng với số lọ đầy của màn đó
+            let activePonies = [...PONIES_POOL].sort(() => Math.random() - 0.5).slice(0, fullColsCount);
+            
             let pool = [];
             activePonies.forEach(p => {
-                for(let i=0; i<COL_CAPACITY; i++) pool.push({ ...p });
+                for(let i = 0; i < COL_CAPACITY; i++) pool.push({ ...p });
             });
             
+            // Xáo trộn Pony thật đều
             pool.sort(() => Math.random() - 0.5);
 
+            // Đổ dữ liệu vào các lọ chứa và tạo các lọ trống
             columnsData = [];
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < fullColsCount; i++) {
                 columnsData.push(pool.slice(i * COL_CAPACITY, (i + 1) * COL_CAPACITY));
             }
-            columnsData.push([]); 
-            columnsData.push([]); 
+            for (let i = 0; i < emptyColsCount; i++) {
+                columnsData.push([]); 
+            }
 
             render();
         }
@@ -191,11 +224,7 @@
             let size = 1;
             let targetId = col[col.length - 1].id;
             for (let i = col.length - 2; i >= 0; i--) {
-                if (col[i].id === targetId) {
-                    size++;
-                } else {
-                    break;
-                }
+                if (col[i].id === targetId) { size++; } else { break; }
             }
             return size;
         }
@@ -215,11 +244,7 @@
                 col.forEach((pony, ponyIdx) => {
                     const ponyDiv = document.createElement('div');
                     ponyDiv.className = 'pony-card';
-                    
-                    if (ponyIdx >= startMovingIdx) {
-                        ponyDiv.classList.add('moving-group');
-                    }
-                    
+                    if (ponyIdx >= startMovingIdx) { ponyDiv.classList.add('moving-group'); }
                     ponyDiv.innerHTML = pony.svg;
                     colDiv.appendChild(ponyDiv);
                 });
@@ -230,13 +255,9 @@
 
         function handleColumnClick(index) {
             if (selectedColIndex === null) {
-                if (columnsData[index].length > 0) {
-                    selectedColIndex = index;
-                }
+                if (columnsData[index].length > 0) { selectedColIndex = index; }
             } else {
-                if (selectedColIndex !== index) {
-                    movePonyGroup(selectedColIndex, index);
-                }
+                if (selectedColIndex !== index) { movePonyGroup(selectedColIndex, index); }
                 selectedColIndex = null;
             }
             render();
@@ -247,15 +268,13 @@
             let fromCol = columnsData[fromIdx];
             let toCol = columnsData[toIdx];
 
-            if (fromCol.length === 0) return;
-            if (toCol.length >= COL_CAPACITY) return; 
+            if (fromCol.length === 0 || toCol.length >= COL_CAPACITY) return; 
 
             let topPony = fromCol[fromCol.length - 1];
 
             if (toCol.length === 0 || toCol[toCol.length - 1].id === topPony.id) {
                 let groupSize = getMovingGroupSize(fromCol);
                 let availableSpace = COL_CAPACITY - toCol.length;
-                
                 let amountToMove = Math.min(groupSize, availableSpace);
                 
                 let movingPonies = fromCol.splice(fromCol.length - amountToMove, amountToMove);
@@ -274,9 +293,27 @@
 
             if (isWin) {
                 setTimeout(() => {
-                    document.getElementById('win-message').style.display = 'block';
+                    if (currentLevel >= 10) {
+                        document.getElementById('victory-message').style.display = 'block';
+                    } else {
+                        document.getElementById('win-message').style.display = 'block';
+                    }
                 }, 300);
             }
+        }
+
+        // Tiến tới màn tiếp theo và lưu kết quả
+        function nextLevel() {
+            currentLevel++;
+            localStorage.setItem('pony_game_level', currentLevel);
+            initGame();
+        }
+
+        // Chơi lại từ màn 1
+        function resetGame() {
+            currentLevel = 1;
+            localStorage.setItem('pony_game_level', currentLevel);
+            initGame();
         }
 
         if ('serviceWorker' in navigator) {
@@ -285,5 +322,7 @@
 
         initGame();
     </script>
+    
+    <button class="reset-btn" onclick="if(confirm('Bé có muốn chơi lại từ Màn 1 không?')) resetGame()">Chơi lại từ đầu (Màn 1)</button>
 </body>
 </html>
