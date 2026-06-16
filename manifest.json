@@ -1,0 +1,16 @@
+{
+  "name": "Pony Sorting Game",
+  "short_name": "PonySort",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#ffe6f2",
+  "theme_color": "#ff4d94",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3220/3220551.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
