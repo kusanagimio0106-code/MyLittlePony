@@ -26,12 +26,59 @@
             display: inline-block; margin-top: 5px; box-shadow: 0 3px 6px rgba(0,0,0,0.1);
         }
         
+        /* BẢN ĐỒ CHỌN MÀN (LEVEL MAP) */
+        .map-title { color: #ff3399; font-weight: bold; font-size: 14px; margin-top: 15px; margin-bottom: 5px; }
+        .level-map {
+            display: flex;
+            gap: 8px;
+            max-width: 95%;
+            overflow-x: auto;
+            padding: 10px 5px;
+            scrollbar-width: none;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 20px;
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.5);
+        }
+        .level-map::-webkit-scrollbar { display: none; }
+        
+        .map-node {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ccc;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: not-allowed;
+            flex-shrink: 0;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            border: 2px solid white;
+        }
+        /* Màn đã mở khóa */
+        .map-node.unlocked {
+            background: linear-gradient(135deg, #ff99cc, #ff4d94);
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(255, 77, 148, 0.3);
+        }
+        .map-node.unlocked:active { transform: scale(0.9); }
+        /* Màn bé đang chọn chơi hiện tại */
+        .map-node.active {
+            background: linear-gradient(135deg, #00ecd4, #00bcd4);
+            box-shadow: 0 0 10px #00bcd4;
+            transform: scale(1.1);
+        }
+        
+        /* KHUNG LỌ THỦY TINH */
         #game-container { 
             display: flex; 
             gap: 10px; 
             justify-content: flex-start;
             flex-wrap: nowrap;
-            margin-top: 20px; 
+            margin-top: 15px; 
             max-width: 100%;
             overflow-x: auto;
             padding: 20px 15px;
@@ -39,7 +86,6 @@
         }
         #game-container::-webkit-scrollbar { display: none; }
         
-        /* KHUNG LỌ THỦY TINH */
         .column {
             position: relative;
             width: 70px;
@@ -56,44 +102,18 @@
             box-shadow: inset 0 0 15px rgba(255,255,255,0.6), 0 6px 12px rgba(255, 77, 148, 0.15);
             flex-shrink: 0;
         }
-        
-        .column::before {
-            content: "💝";
-            position: absolute;
-            top: -16px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 18px;
-            z-index: 2;
-        }
-        .column::after {
-            content: "";
-            position: absolute;
-            top: -6px;
-            width: 45px;
-            height: 8px;
-            background: #ff99cc;
-            border-radius: 4px;
-            border: 2px solid #ffb3d9;
-        }
+        .column::before { content: "💝"; position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 18px; z-index: 2; }
+        .column::after { content: ""; position: absolute; top: -6px; width: 45px; height: 8px; background: #ff99cc; border-radius: 4px; border: 2px solid #ffb3d9; }
 
-        /* EFFECT KHI CHỌN */
         .column.selected { 
             border-color: #ff3399; 
             background: linear-gradient(to bottom, rgba(255, 230, 242, 0.6), rgba(255, 204, 230, 0.9));
             box-shadow: 0 0 20px rgba(255, 51, 153, 0.6); 
             animation: tilt 0.5s infinite alternate ease-in-out;
         }
+        .column.selected .moving-group { transform: translateY(-10px); filter: drop-shadow(0 5px 5px rgba(0,0,0,0.2)); }
         
-        .column.selected .moving-group {
-            transform: translateY(-10px);
-            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.2));
-        }
-        
-        @keyframes tilt {
-            0% { transform: translateY(-5px) rotate(-2deg); }
-            100% { transform: translateY(-5px) rotate(2deg); }
-        }
+        @keyframes tilt { 0% { transform: translateY(-5px) rotate(-2deg); } 100% { transform: translateY(-5px) rotate(2deg); } }
 
         /* Ô TRÒN CHỨA ICON PONY */
         .pony-card {
@@ -113,10 +133,9 @@
             transition: transform 0.2s ease;
         }
         .pony-card svg { width: 82%; height: 82%; }
-        
         @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
         
-        /* BẢNG CHIẾN THẮNG & HOÀN THÀNH GAME */
+        /* BẢNG CHIẾN THẮNG */
         .modal {
             display: none;
             position: fixed;
@@ -133,39 +152,39 @@
             color: white; border: none; padding: 12px 30px;
             font-size: 18px; border-radius: 25px; cursor: pointer; margin-top: 15px;
             box-shadow: 0 5px #b30059; font-weight: bold;
-            transition: all 0.1s;
         }
         button:active { box-shadow: 0 2px #b30059; transform: translateY(3px); }
         
-        .reset-btn {
-            background: #999; box-shadow: 0 3px #666; font-size: 12px; padding: 5px 10px; border-radius: 10px; margin-top: 20px;
+        .clear-data-btn {
+            background: none; color: #ff80aa; border: none; font-size: 11px; text-decoration: underline; cursor: pointer; margin-top: 15px;
         }
-        .reset-btn:active { box-shadow: 0 1px #666; }
     </style>
 </head>
 <body>
 
     <div class="header-container">
-        <h1>🦄 Sắp xếp cho những Pony Đáng Yêu 🦄</h1>
+        <h1>🦄 Xếp chỗ cho các Pony đáng yêu 🦄</h1>
         <div class="level-badge" id="level-display">Màn 1</div>
     </div>
+    
+    <div class="map-title">🗺️ Bản đồ thế giới Pony của bé:</div>
+    <div class="level-map" id="level-map-container"></div>
     
     <div id="game-container"></div>
 
     <div id="win-message" class="modal">
         <h2>🎉 Xuất sắc quá! 🎉</h2>
-        <p id="win-text">Bé đã hoàn thành màn chơi này rồi!</p>
+        <p>Bé đã hoàn thành màn chơi này rồi!</p>
         <button onclick="nextLevel()">Chơi Màn Tiếp Theo</button>
     </div>
 
     <div id="victory-message" class="modal">
         <h2>👑 Công Chúa Pony! 👑</h2>
         <p>Bé quá thông minh! Bé đã chiến thắng toàn bộ 10 màn chơi!</p>
-        <button onclick="resetGame()">Chơi lại từ đầu</button>
+        <button onclick="closeVictoryModal()">Xem lại Bản đồ màn</button>
     </div>
 
     <script>
-        // Kho 6 nhân vật My Little Pony vẽ bằng SVG
         const PONIES_POOL = [
             { id: 'twilight', svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#D19FEF"/><path d="M20,30 Q50,5 80,30 Q65,65 50,85 Q35,65 20,30" fill="#283593"/><path d="M35,20 Q50,5 65,20 Q55,50 50,75" fill="#E91E63"/><polygon points="50,15 53,25 62,25 55,31 57,40 50,35 43,40 45,31 38,25 47,25" fill="#FFFFFF"/></svg>` },
             { id: 'pinkie', svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#FFB7D5"/><path d="M20,40 Q50,-10 80,40 Q95,70 50,90 Q5,70 20,40" fill="#FF4081"/><circle cx="40" cy="35" r="8" fill="#FF4081"/><circle cx="60" cy="45" r="10" fill="#FF4081"/><circle cx="35" cy="60" r="7" fill="#FF4081"/></svg>` },
@@ -176,13 +195,19 @@
         ];
 
         const COL_CAPACITY = 4;
-        let currentLevel = 1;
+        let currentLevel = 1; // Màn bé đang chơi hiện tại
+        let maxLevel = 1;     // Màn cao nhất bé đã từng mở khóa được
         let selectedColIndex = null;
         let columnsData = [];
 
-        // Đọc dữ liệu màn chơi cũ đã lưu (nếu có)
-        if (localStorage.getItem('pony_game_level')) {
-            currentLevel = parseInt(localStorage.getItem('pony_game_level'));
+        // Đọc dữ liệu đã lưu trong máy
+        if (localStorage.getItem('pony_max_level')) {
+            maxLevel = parseInt(localStorage.getItem('pony_max_level'));
+        }
+        if (localStorage.getItem('pony_current_level')) {
+            currentLevel = parseInt(localStorage.getItem('pony_current_level'));
+        } else {
+            currentLevel = maxLevel; // Nếu mới mở máy, cho chơi tiếp màn cao nhất
         }
 
         function initGame() {
@@ -191,23 +216,20 @@
             document.getElementById('level-display').innerText = `Màn ${currentLevel}`;
             selectedColIndex = null;
             
-            // LOGIC TĂNG ĐỘ KHÓ THEO MÀN:
-            // Màn 1: 2 nhân vật đầy + 1 trống. Màn càng cao càng cộng thêm lọ.
+            // Vẽ lại bản đồ màn chơi
+            renderMap();
+
+            // Tính số lượng lọ dựa theo màn hiện tại đang chọn chơi
             let fullColsCount = Math.min(2 + (currentLevel - 1), 6); 
             let emptyColsCount = Math.min(1 + (currentLevel - 1), 4); 
 
-            // Lấy ngẫu nhiên các nhân vật tương ứng với số lọ đầy của màn đó
             let activePonies = [...PONIES_POOL].sort(() => Math.random() - 0.5).slice(0, fullColsCount);
-            
             let pool = [];
             activePonies.forEach(p => {
                 for(let i = 0; i < COL_CAPACITY; i++) pool.push({ ...p });
             });
-            
-            // Xáo trộn Pony thật đều
             pool.sort(() => Math.random() - 0.5);
 
-            // Đổ dữ liệu vào các lọ chứa và tạo các lọ trống
             columnsData = [];
             for (let i = 0; i < fullColsCount; i++) {
                 columnsData.push(pool.slice(i * COL_CAPACITY, (i + 1) * COL_CAPACITY));
@@ -217,6 +239,36 @@
             }
 
             render();
+        }
+
+        // HÀM VẼ BẢN ĐỒ CHỌN MÀN (LEVEL MAP)
+        function renderMap() {
+            const mapContainer = document.getElementById('level-map-container');
+            mapContainer.innerHTML = '';
+
+            for (let i = 1; i <= 10; i++) {
+                const node = document.createElement('div');
+                node.className = 'map-node';
+                
+                if (i <= maxLevel) {
+                    node.classList.add('unlocked');
+                    node.innerText = i;
+                    // Khi bé bấm vào nút màn cũ, game chuyển sang màn đó ngay
+                    node.onclick = () => {
+                        currentLevel = i;
+                        localStorage.setItem('pony_current_level', currentLevel);
+                        initGame();
+                    };
+                } else {
+                    node.innerText = '🔒'; // Hiện ổ khóa nếu chưa chơi tới
+                }
+
+                if (i === currentLevel) {
+                    node.classList.add('active');
+                }
+
+                mapContainer.appendChild(node);
+            }
         }
 
         function getMovingGroupSize(col) {
@@ -293,7 +345,13 @@
 
             if (isWin) {
                 setTimeout(() => {
-                    if (currentLevel >= 10) {
+                    // Nếu bé đang chơi màn cao nhất bé có, mở khóa màn tiếp theo
+                    if (currentLevel === maxLevel && maxLevel < 10) {
+                        maxLevel++;
+                        localStorage.setItem('pony_max_level', maxLevel);
+                    }
+                    
+                    if (currentLevel === 10) {
                         document.getElementById('victory-message').style.display = 'block';
                     } else {
                         document.getElementById('win-message').style.display = 'block';
@@ -302,18 +360,25 @@
             }
         }
 
-        // Tiến tới màn tiếp theo và lưu kết quả
         function nextLevel() {
             currentLevel++;
-            localStorage.setItem('pony_game_level', currentLevel);
+            localStorage.setItem('pony_current_level', currentLevel);
             initGame();
         }
 
-        // Chơi lại từ màn 1
-        function resetGame() {
-            currentLevel = 1;
-            localStorage.setItem('pony_game_level', currentLevel);
-            initGame();
+        function closeVictoryModal() {
+            document.getElementById('victory-message').style.display = 'none';
+            renderMap();
+        }
+
+        // Nút xóa dữ liệu để ba chơi thử từ đầu nếu muốn
+        function clearAllData() {
+            if (confirm('Ba có chắc chắn muốn xóa hết màn đã qua của bé để chơi lại từ Màn 1 không?')) {
+                localStorage.clear();
+                currentLevel = 1;
+                maxLevel = 1;
+                initGame();
+            }
         }
 
         if ('serviceWorker' in navigator) {
@@ -323,6 +388,6 @@
         initGame();
     </script>
     
-    <button class="reset-btn" onclick="if(confirm('Bé có muốn chơi lại từ Màn 1 không?')) resetGame()">Chơi lại từ đầu (Màn 1)</button>
+    <button class="clear-data-btn" onclick="clearAllData()">Chơi lại từ đầu (Xóa toàn bộ màn đã qua)</button>
 </body>
 </html>
