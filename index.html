@@ -58,14 +58,12 @@
             transition: all 0.2s;
             border: 2px solid white;
         }
-        /* Màn đã mở khóa */
         .map-node.unlocked {
             background: linear-gradient(135deg, #ff99cc, #ff4d94);
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(255, 77, 148, 0.3);
         }
         .map-node.unlocked:active { transform: scale(0.9); }
-        /* Màn bé đang chọn chơi hiện tại */
         .map-node.active {
             background: linear-gradient(135deg, #00ecd4, #00bcd4);
             box-shadow: 0 0 10px #00bcd4;
@@ -163,7 +161,7 @@
 <body>
 
     <div class="header-container">
-        <h1>🦄 Xếp chỗ cho các Pony đáng yêu 🦄</h1>
+        <h1>🦄 Sắp Xếp Pony Đáng Yêu 🦄</h1>
         <div class="level-badge" id="level-display">Màn 1</div>
     </div>
     
@@ -195,19 +193,85 @@
         ];
 
         const COL_CAPACITY = 4;
-        let currentLevel = 1; // Màn bé đang chơi hiện tại
-        let maxLevel = 1;     // Màn cao nhất bé đã từng mở khóa được
+        let currentLevel = 1; 
+        let maxLevel = 1;     
         let selectedColIndex = null;
         let columnsData = [];
 
-        // Đọc dữ liệu đã lưu trong máy
+        // KHỞI TẠO HỆ THỐNG ÂM THANH SỐ (WEB AUDIO API)
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioCtx;
+        }
+
+        // 1. Âm thanh khi Chạm (Nhấc Pony lên)
+        function playClickSound() {
+            try {
+                let ctx = getAudioContext();
+                let osc = ctx.createOscillator();
+                let gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, ctx.currentTime); // Tần số nốt nhạc
+                osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.08);
+            } catch(e) {}
+        }
+
+        // 2. Âm thanh khi Thả Pony xuống thành công
+        function playDropSound() {
+            try {
+                let ctx = getAudioContext();
+                let osc = ctx.createOscillator();
+                let gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(150, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.15);
+            } catch(e) {}
+        }
+
+        // 3. Âm thanh rộn ràng chúc mừng chiến thắng (Win)
+        function playWinSound() {
+            try {
+                let ctx = getAudioContext();
+                let notes = [523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50]; // Chuỗi nốt nhạc vui tươi
+                notes.forEach((freq, index) => {
+                    let startTime = ctx.currentTime + (index * 0.08);
+                    let osc = ctx.createOscillator();
+                    let gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, startTime);
+                    gain.gain.setValueAtTime(0.2, startTime);
+                    gain.gain.linearRampToValueAtTime(0, startTime + 0.2);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.2);
+                });
+            } catch(e) {}
+        }
+
+        // Đọc dữ liệu cũ
         if (localStorage.getItem('pony_max_level')) {
             maxLevel = parseInt(localStorage.getItem('pony_max_level'));
         }
         if (localStorage.getItem('pony_current_level')) {
             currentLevel = parseInt(localStorage.getItem('pony_current_level'));
         } else {
-            currentLevel = maxLevel; // Nếu mới mở máy, cho chơi tiếp màn cao nhất
+            currentLevel = maxLevel;
         }
 
         function initGame() {
@@ -216,10 +280,8 @@
             document.getElementById('level-display').innerText = `Màn ${currentLevel}`;
             selectedColIndex = null;
             
-            // Vẽ lại bản đồ màn chơi
             renderMap();
 
-            // Tính số lượng lọ dựa theo màn hiện tại đang chọn chơi
             let fullColsCount = Math.min(2 + (currentLevel - 1), 6); 
             let emptyColsCount = Math.min(1 + (currentLevel - 1), 4); 
 
@@ -241,7 +303,6 @@
             render();
         }
 
-        // HÀM VẼ BẢN ĐỒ CHỌN MÀN (LEVEL MAP)
         function renderMap() {
             const mapContainer = document.getElementById('level-map-container');
             mapContainer.innerHTML = '';
@@ -253,14 +314,14 @@
                 if (i <= maxLevel) {
                     node.classList.add('unlocked');
                     node.innerText = i;
-                    // Khi bé bấm vào nút màn cũ, game chuyển sang màn đó ngay
                     node.onclick = () => {
+                        playClickSound(); // Phát âm thanh khi chọn map
                         currentLevel = i;
                         localStorage.setItem('pony_current_level', currentLevel);
                         initGame();
                     };
                 } else {
-                    node.innerText = '🔒'; // Hiện ổ khóa nếu chưa chơi tới
+                    node.innerText = '🔒';
                 }
 
                 if (i === currentLevel) {
@@ -307,9 +368,21 @@
 
         function handleColumnClick(index) {
             if (selectedColIndex === null) {
-                if (columnsData[index].length > 0) { selectedColIndex = index; }
+                if (columnsData[index].length > 0) {
+                    selectedColIndex = index;
+                    playClickSound(); // Âm thanh nhấc lên
+                }
             } else {
-                if (selectedColIndex !== index) { movePonyGroup(selectedColIndex, index); }
+                if (selectedColIndex !== index) {
+                    let isMoved = movePonyGroup(selectedColIndex, index);
+                    if (isMoved) {
+                        playDropSound(); // Âm thanh hạ xuống thành công
+                    } else {
+                        playClickSound(); // Nếu bấm lỗi thì chỉ tính là bấm chọn lại
+                    }
+                } else {
+                    playClickSound(); // Bấm lại hũ cũ để hủy chọn
+                }
                 selectedColIndex = null;
             }
             render();
@@ -320,7 +393,7 @@
             let fromCol = columnsData[fromIdx];
             let toCol = columnsData[toIdx];
 
-            if (fromCol.length === 0 || toCol.length >= COL_CAPACITY) return; 
+            if (fromCol.length === 0 || toCol.length >= COL_CAPACITY) return false; 
 
             let topPony = fromCol[fromCol.length - 1];
 
@@ -331,7 +404,9 @@
                 
                 let movingPonies = fromCol.splice(fromCol.length - amountToMove, amountToMove);
                 columnsData[toIdx] = toCol.concat(movingPonies);
+                return true;
             }
+            return false;
         }
 
         function checkWin() {
@@ -345,7 +420,7 @@
 
             if (isWin) {
                 setTimeout(() => {
-                    // Nếu bé đang chơi màn cao nhất bé có, mở khóa màn tiếp theo
+                    playWinSound(); // Âm thanh chiến thắng vang lên rộn rã!
                     if (currentLevel === maxLevel && maxLevel < 10) {
                         maxLevel++;
                         localStorage.setItem('pony_max_level', maxLevel);
@@ -361,17 +436,18 @@
         }
 
         function nextLevel() {
+            playClickSound();
             currentLevel++;
             localStorage.setItem('pony_current_level', currentLevel);
             initGame();
         }
 
         function closeVictoryModal() {
+            playClickSound();
             document.getElementById('victory-message').style.display = 'none';
             renderMap();
         }
 
-        // Nút xóa dữ liệu để ba chơi thử từ đầu nếu muốn
         function clearAllData() {
             if (confirm('Ba có chắc chắn muốn xóa hết màn đã qua của bé để chơi lại từ Màn 1 không?')) {
                 localStorage.clear();
