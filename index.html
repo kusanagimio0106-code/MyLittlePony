@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xếp chỗ cho MyLittlePony</title>
+    <title>Pony Sorting Game</title>
     <link rel="manifest" href="manifest.json">
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -16,33 +16,43 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            justify-content: center; /* Căn giữa màn hình theo chiều dọc */
         }
         h1 { color: #ff4d94; text-shadow: 2px 2px white; margin-bottom: 5px; font-size: 24px; text-align: center; font-weight: bold; }
         
+        /* ĐƯA CÁC CỘT VÀO CÙNG MỘT HÀNG NGANG */
         #game-container { 
             display: flex; 
-            gap: 12px; 
-            justify-content: center; 
-            flex-wrap: wrap; 
+            gap: 10px; 
+            justify-content: flex-start; /* Sắp xếp từ trái qua phải */
+            flex-wrap: nowrap; /* Tuyệt đối không cho xuống hàng */
             margin-top: 25px; 
-            max-width: 500px; 
+            max-width: 100%;
+            overflow-x: auto; /* Nếu màn hình nhỏ sẽ tự động cho vuốt ngang mượt mà */
+            padding: 20px 15px; /* Thêm padding để không bị che mất nơ */
+            scrollbar-width: none; /* Ẩn thanh cuộn trên Firefox */
+        }
+        
+        #game-container::-webkit-scrollbar {
+            display: none; /* Ẩn thanh cuộn trên Chrome, Safari */
         }
         
         /* KHUNG LỌ THỦY TINH */
         .column {
             position: relative;
-            width: 76px;
-            height: 290px;
-            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.8));
+            width: 70px; /* Thu nhỏ một chút để vừa vặn hàng ngang tốt hơn */
+            height: 270px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.85));
             border: 4px solid #ffb3d9;
-            border-radius: 12px 12px 30px 30px; 
+            border-radius: 12px 12px 25px 25px; 
             display: flex;
             flex-direction: column-reverse;
             align-items: center;
-            padding: 15px 5px 20px 5px;
+            padding: 15px 3px 15px 3px;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-shadow: inset 0 0 15px rgba(255,255,255,0.6), 0 6px 12px rgba(255, 77, 148, 0.15);
+            flex-shrink: 0; /* Không cho hũ bị bóp méo chiều rộng */
         }
         
         .column::before {
@@ -51,14 +61,14 @@
             top: -16px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 20px;
+            font-size: 18px;
             z-index: 2;
         }
         .column::after {
             content: "";
             position: absolute;
             top: -6px;
-            width: 50px;
+            width: 45px;
             height: 8px;
             background: #ff99cc;
             border-radius: 4px;
@@ -73,7 +83,6 @@
             animation: tilt 0.5s infinite alternate ease-in-out;
         }
         
-        /* Hiệu ứng nhấc cụm Pony chuẩn bị di chuyển */
         .column.selected .moving-group {
             transform: translateY(-10px);
             filter: drop-shadow(0 5px 5px rgba(0,0,0,0.2));
@@ -86,8 +95,8 @@
 
         /* Ô TRÒN CHỨA ICON PONY */
         .pony-card {
-            width: 56px;
-            height: 56px;
+            width: 52px;
+            height: 52px;
             background: white;
             border-radius: 50%;
             display: flex;
@@ -177,7 +186,6 @@
             render();
         }
 
-        // Hàm đếm số Pony giống nhau liên tiếp ở trên cùng của cột
         function getMovingGroupSize(col) {
             if (col.length === 0) return 0;
             let size = 1;
@@ -201,7 +209,6 @@
                 colDiv.className = `column ${selectedColIndex === index ? 'selected' : ''}`;
                 colDiv.onclick = () => handleColumnClick(index);
 
-                // Xác định số lượng phần tử sẽ di chuyển nếu cột này được chọn
                 let movingSize = (selectedColIndex === index) ? getMovingGroupSize(col) : 0;
                 let startMovingIdx = col.length - movingSize;
 
@@ -209,7 +216,6 @@
                     const ponyDiv = document.createElement('div');
                     ponyDiv.className = 'pony-card';
                     
-                    // Nếu thuộc nhóm di chuyển, thêm class để tạo hiệu ứng nhấc lên
                     if (ponyIdx >= startMovingIdx) {
                         ponyDiv.classList.add('moving-group');
                     }
@@ -237,25 +243,21 @@
             checkWin();
         }
 
-        // LOGIC MỚI: Di chuyển cả cụm Pony giống nhau liền kề
         function movePonyGroup(fromIdx, toIdx) {
             let fromCol = columnsData[fromIdx];
             let toCol = columnsData[toIdx];
 
             if (fromCol.length === 0) return;
-            if (toCol.length >= COL_CAPACITY) return; // Lọ đích đã đầy
+            if (toCol.length >= COL_CAPACITY) return; 
 
             let topPony = fromCol[fromCol.length - 1];
 
-            // Luật: Lọ đích phải TRỐNG hoặc có Pony trên cùng TRÙNG LOẠI với cụm sắp chuyển tới
             if (toCol.length === 0 || toCol[toCol.length - 1].id === topPony.id) {
                 let groupSize = getMovingGroupSize(fromCol);
                 let availableSpace = COL_CAPACITY - toCol.length;
                 
-                // Chỉ chuyển số lượng tối đa mà lọ đích có thể chứa
                 let amountToMove = Math.min(groupSize, availableSpace);
                 
-                // Cắt cụm từ lọ cũ và nối vào lọ mới
                 let movingPonies = fromCol.splice(fromCol.length - amountToMove, amountToMove);
                 columnsData[toIdx] = toCol.concat(movingPonies);
             }
