@@ -2,6 +2,12 @@ const CACHE_NAME = 'pony-game-v2'; // Đổi từ v1 thành v2 để ép trình 
 const ASSETS = [
   'index.html',
   'manifest.json'
+  'twilight.png',
+  'pinkie.png',
+  'rainbow.png',
+  'fluttershy.png',
+  'rarity.png',
+  'applejack.png'
 ];
 
 self.addEventListener('install', e => {
