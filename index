@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pony Sorting Game</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * { box-sizing: border-box; user-select: none; }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #ffe6f2, #ffb3d9, #b3e6ff);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        h1 { color: #ff4d94; text-shadow: 2px 2px white; margin-bottom: 10px; font-size: 24px; }
+        #game-container { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+        .column {
+            width: 70px;
+            height: 260px;
+            background: rgba(255, 255, 255, 0.6);
+            border: 3px dashed #ff99cc;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            padding: 10px 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .column.selected { border-color: #4da6ff; transform: scale(1.05); background: rgba(230, 242, 255, 0.8); }
+        .pony {
+            font-size: 35px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 4px 0;
+            animation: pop 0.3s ease;
+        }
+        @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        #win-message {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: white; padding: 30px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: center; z-index: 10;
+        }
+        button {
+            background: #ff4d94; color: white; border: none; padding: 10px 20px;
+            font-size: 18px; border-radius: 20px; cursor: pointer; margin-top: 15px;
+            box-shadow: 0 4px #cc0066;
+        }
+        button:active { box-shadow: 0 2px #cc0066; transform: translateY(2px); }
+    </style>
+</head>
+<body>
+
+    <h1>🦄 Pony Sắp Xếp Đáng Yêu 🦄</h1>
+    <div id="game-container"></div>
+
+    <div id="win-message">
+        <h2>🎉 Thắng rồi! Bé giỏi quá! 🎉</h2>
+        <p>Tất cả các bạn Pony đã về đúng nhà!</p>
+        <button onclick="initGame()">Chơi tiếp nha</button>
+    </div>
+
+    <script>
+        // Đại diện cho các Pony bằng Emoji siêu dễ thương (vì GitHub Pages không lo bị mất link ảnh)
+        // 🦄 Twilight Sparkle, 🦋 Fluttershy, 🍎 Applejack, 💎 Rarity, ⚡ Rainbow Dash, 🎈 Pinkie Pie
+        const PONIES = ['🦄', '🦋', '🍎', '💎', '⚡', '🎈'];
+        const COL_CAPACITY = 4;
+        let selectedColIndex = null;
+        let columnsData = [];
+
+        function initGame() {
+            document.getElementById('win-message').style.display = 'none';
+            selectedColIndex = null;
+            
+            // Lấy 4 loại Pony để chơi (Bé chơi vừa sức, không quá khó)
+            let activePonies = [...PONIES].sort(() => Math.random() - 0.5).slice(0, 4);
+            let pool = [];
+            activePonies.forEach(p => {
+                for(let i=0; i<COL_CAPACITY; i++) pool.push(p);
+            });
+            
+            // Xáo trộn pony
+            pool.sort(() => Math.random() - 0.5);
+
+            // Tạo 4 cột có chứa pony + 2 cột trống để bé di chuyển = 6 cột
+            columnsData = [];
+            for (let i = 0; i < 4; i++) {
+                columnsData.push(pool.slice(i * COL_CAPACITY, (i + 1) * COL_CAPACITY));
+            }
+            columnsData.push([]); // Cột trống 1
+            columnsData.push([]); // Cột trống 2
+
+            render();
+        }
+
+        function render() {
+            const container = document.getElementById('game-container');
+            container.innerHTML = '';
+
+            columnsData.forEach((col, index) => {
+                const colDiv = document.createElement('div');
+                colDiv.className = `column ${selectedColIndex === index ? 'selected' : ''}`;
+                colDiv.onclick = () => handleColumnClick(index);
+
+                col.forEach(pony => {
+                    const ponyDiv = document.createElement('div');
+                    ponyDiv.className = 'pony';
+                    ponyDiv.innerText = pony;
+                    colDiv.appendChild(ponyDiv);
+                });
+
+                container.appendChild(colDiv);
+            });
+        }
+
+        function handleColumnClick(index) {
+            if (selectedColIndex === null) {
+                // Chọn cột nguồn (phải có pony mới chọn được)
+                if (columnsData[index].length > 0) {
+                    selectedColIndex = index;
+                }
+            } else {
+                // Chọn cột đích
+                if (selectedColIndex !== index) {
+                    movePony(selectedColIndex, index);
+                }
+                selectedColIndex = null;
+            }
+            render();
+            checkWin();
+        }
+
+        function movePony(fromIdx, toIdx) {
+            let fromCol = columnsData[fromIdx];
+            let toCol = columnsData[toIdx];
+
+            if (toCol.length >= COL_CAPACITY) return; // Cột đầy không bỏ vào được
+
+            let topPony = fromCol[fromCol.length - 1];
+            
+            // Luật: Cột đích phải trống HOẶC Pony trên cùng của cột đích phải cùng loại
+            if (toCol.length === 0 || toCol[toCol.length - 1] === topPony) {
+                toCol.push(fromCol.pop());
+            }
+        }
+
+        function checkWin() {
+            let isWin = columnsData.every(col => {
+                if (col.length === 0) return true;
+                if (col.length === COL_CAPACITY) {
+                    return col.every(pony => pony === col[0]);
+                }
+                return false;
+            });
+
+            if (isWin) {
+                setTimeout(() => {
+                    document.getElementById('win-message').style.display = 'block';
+                }, 300);
+            }
+        }
+
+        // Đăng ký Service Worker cho PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
