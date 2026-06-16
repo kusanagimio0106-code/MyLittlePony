@@ -6,23 +6,23 @@
     <title>Pony Sorting Game</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        * { box-sizing: border-box; user-select: none; }
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
         body {
             font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #ffe6f2, #ffb3d9, #b3e6ff);
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
         }
-        h1 { color: #ff4d94; text-shadow: 2px 2px white; margin-bottom: 10px; font-size: 24px; }
-        #game-container { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+        h1 { color: #ff4d94; text-shadow: 2px 2px white; margin-bottom: 5px; font-size: 22px; text-align: center; }
+        #game-container { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px; max-width: 500px; }
         .column {
-            width: 70px;
-            height: 260px;
-            background: rgba(255, 255, 255, 0.6);
+            width: 75px;
+            height: 280px;
+            background: rgba(255, 255, 255, 0.7);
             border: 3px dashed #ff99cc;
             border-radius: 15px;
             display: flex;
@@ -30,18 +30,28 @@
             align-items: center;
             padding: 10px 5px;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
-        .column.selected { border-color: #4da6ff; transform: scale(1.05); background: rgba(230, 242, 255, 0.8); }
-        .pony {
-            font-size: 35px;
-            width: 50px;
-            height: 50px;
+        .column.selected { border-color: #00bcd4; transform: scale(1.05); background: rgba(224, 247, 250, 0.9); box-shadow: 0 8px 15px rgba(0,188,212,0.3); }
+        .pony-card {
+            width: 55px;
+            height: 55px;
+            background: white;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 4px 0;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
             animation: pop 0.3s ease;
+            overflow: hidden;
+            border: 2px solid #ffccd5;
+        }
+        .pony-card img {
+            width: 85%;
+            height: 85%;
+            object-fit: contain;
         }
         @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
         #win-message {
@@ -49,12 +59,14 @@
             position: fixed;
             top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: white; padding: 30px; border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: center; z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center; z-index: 10;
+            width: 85%; max-width: 350px;
         }
+        #win-message h2 { color: #ff4d94; margin-top: 0; }
         button {
-            background: #ff4d94; color: white; border: none; padding: 10px 20px;
-            font-size: 18px; border-radius: 20px; cursor: pointer; margin-top: 15px;
-            box-shadow: 0 4px #cc0066;
+            background: #ff4d94; color: white; border: none; padding: 12px 25px;
+            font-size: 18px; border-radius: 25px; cursor: pointer; margin-top: 15px;
+            box-shadow: 0 4px #cc0066; font-weight: bold;
         }
         button:active { box-shadow: 0 2px #cc0066; transform: translateY(2px); }
     </style>
@@ -65,15 +77,22 @@
     <div id="game-container"></div>
 
     <div id="win-message">
-        <h2>🎉 Thắng rồi! Bé giỏi quá! 🎉</h2>
-        <p>Tất cả các bạn Pony đã về đúng nhà!</p>
+        <h2>🎉 Bé giỏi quá! 🎉</h2>
+        <p>Các bạn My Little Pony đã về đúng nhà rồi!</p>
         <button onclick="initGame()">Chơi tiếp nha</button>
     </div>
 
     <script>
-        // Đại diện cho các Pony bằng Emoji siêu dễ thương (vì GitHub Pages không lo bị mất link ảnh)
-        // 🦄 Twilight Sparkle, 🦋 Fluttershy, 🍎 Applejack, 💎 Rarity, ⚡ Rainbow Dash, 🎈 Pinkie Pie
-        const PONIES = ['🦄', '🦋', '🍎', '💎', '⚡', '🎈'];
+        // Danh sách hình ảnh chuẩn 6 nhân vật chính trong My Little Pony từ trang dữ liệu uy tín
+        const PONIES = [
+            { id: 'twilight', img: 'https://images.wikia.com/mlp/images/b/bc/Twilight_Sparkle_id.png' },
+            { id: 'pinkie', img: 'https://images.wikia.com/mlp/images/b/b2/Pinkie_Pie_id.png' },
+            { id: 'rainbow', img: 'https://images.wikia.com/mlp/images/e/e5/Rainbow_Dash_id.png' },
+            { id: 'fluttershy', img: 'https://images.wikia.com/mlp/images/d/d6/Fluttershy_id.png' },
+            { id: 'rarity', img: 'https://images.wikia.com/mlp/images/d/d1/Rarity_id.png' },
+            { id: 'applejack', img: 'https://images.wikia.com/mlp/images/d/d8/Applejack_id.png' }
+        ];
+
         const COL_CAPACITY = 4;
         let selectedColIndex = null;
         let columnsData = [];
@@ -82,23 +101,23 @@
             document.getElementById('win-message').style.display = 'none';
             selectedColIndex = null;
             
-            // Lấy 4 loại Pony để chơi (Bé chơi vừa sức, không quá khó)
+            // Chọn ngẫu nhiên 4 nhân vật Pony để chơi mỗi lượt (giúp game vừa sức với bé)
             let activePonies = [...PONIES].sort(() => Math.random() - 0.5).slice(0, 4);
             let pool = [];
             activePonies.forEach(p => {
-                for(let i=0; i<COL_CAPACITY; i++) pool.push(p);
+                for(let i=0; i<COL_CAPACITY; i++) pool.push({ ...p });
             });
             
-            // Xáo trộn pony
+            // Xáo trộn vị trí các Pony
             pool.sort(() => Math.random() - 0.5);
 
-            // Tạo 4 cột có chứa pony + 2 cột trống để bé di chuyển = 6 cột
+            // Tạo 4 cột chứa Pony và 2 cột trống để di chuyển (Tổng cộng 6 cột)
             columnsData = [];
             for (let i = 0; i < 4; i++) {
                 columnsData.push(pool.slice(i * COL_CAPACITY, (i + 1) * COL_CAPACITY));
             }
-            columnsData.push([]); // Cột trống 1
-            columnsData.push([]); // Cột trống 2
+            columnsData.push([]); 
+            columnsData.push([]); 
 
             render();
         }
@@ -114,8 +133,13 @@
 
                 col.forEach(pony => {
                     const ponyDiv = document.createElement('div');
-                    ponyDiv.className = 'pony';
-                    ponyDiv.innerText = pony;
+                    ponyDiv.className = 'pony-card';
+                    
+                    const img = document.createElement('img');
+                    img.src = pony.img;
+                    img.alt = pony.id;
+                    
+                    ponyDiv.appendChild(img);
                     colDiv.appendChild(ponyDiv);
                 });
 
@@ -125,12 +149,10 @@
 
         function handleColumnClick(index) {
             if (selectedColIndex === null) {
-                // Chọn cột nguồn (phải có pony mới chọn được)
                 if (columnsData[index].length > 0) {
                     selectedColIndex = index;
                 }
             } else {
-                // Chọn cột đích
                 if (selectedColIndex !== index) {
                     movePony(selectedColIndex, index);
                 }
@@ -144,12 +166,12 @@
             let fromCol = columnsData[fromIdx];
             let toCol = columnsData[toIdx];
 
-            if (toCol.length >= COL_CAPACITY) return; // Cột đầy không bỏ vào được
+            if (toCol.length >= COL_CAPACITY) return; 
 
             let topPony = fromCol[fromCol.length - 1];
             
-            // Luật: Cột đích phải trống HOẶC Pony trên cùng của cột đích phải cùng loại
-            if (toCol.length === 0 || toCol[toCol.length - 1] === topPony) {
+            // Luật xếp: Cột phải trống HOẶC Pony trên cùng phải trùng hình với Pony định thả vào
+            if (toCol.length === 0 || toCol[toCol.length - 1].id === topPony.id) {
                 toCol.push(fromCol.pop());
             }
         }
@@ -158,7 +180,7 @@
             let isWin = columnsData.every(col => {
                 if (col.length === 0) return true;
                 if (col.length === COL_CAPACITY) {
-                    return col.every(pony => pony === col[0]);
+                    return col.every(pony => pony.id === col[0].id);
                 }
                 return false;
             });
@@ -170,7 +192,6 @@
             }
         }
 
-        // Đăng ký Service Worker cho PWA
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
         }
